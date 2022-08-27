@@ -97,11 +97,44 @@ class Obstacle(pygame.sprite.Sprite):
             self.kill()
 
 
+def restart_scene():
+    if language == 'English':
+        score_message = font.render(f'Your score : {score}', False, (111, 196, 169))
+    elif language == 'Turkce':
+        score_message = font.render(f'Skorunuz : {score}', False, (111, 196, 169))
+    else:
+        score_message = font.render(f'Twoj wynik : {score}', False, (111, 196, 169))
+    score_message_rectangle = score_message.get_rect(center=(400, 80))
+    screen.blit(score_message, score_message_rectangle)
+    screen.blit(player_stand, player_stand_rectangle)
+    screen.blit(game_message, game_message_rectangle)
+    screen.blit(settings_icon, settings_rect)
+    player.sprite.rect.bottom = 300
+
+
+def start_scene():
+    screen.blit(game_name, game_name_rectangle)
+    screen.blit(player_stand, player_stand_rectangle)
+    screen.blit(game_message, game_message_rectangle)
+    screen.blit(settings_icon, settings_rect)
+
+
+def settings_scene():
+    language_message = font.render(''+language, False, (111, 196, 169))
+    language_rect = language_message.get_rect(center=(400, 300))
+
+    screen.blit(language_message, language_rect)
+    screen.blit(return_icon, return_rect)
+    screen.blit(turkish_icon, turkish_rect)
+    screen.blit(english_icon, english_rect)
+    screen.blit(polish_icon, polish_rect)
+
+
 # Game variables
 pygame.init()
 screen = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
 pygame.display.set_caption(DISPLAY_TITLE)
-icon = pygame.image.load('graphics/icon.png').convert_alpha()
+icon = pygame.image.load('graphics/appicon.png').convert_alpha()
 pygame.display.set_icon(icon)
 clock = pygame.time.Clock()
 game_running = False
@@ -110,9 +143,24 @@ score = 0
 font = pygame.font.Font('font/pixeltype.ttf', 50)
 bg_music = pygame.mixer.Sound('audio/music.wav')
 bg_music.set_volume(0.1)
+death_sound = pygame.mixer.Sound('audio/death.mp3')
+death_sound.set_volume(0.1)
 
-settings_icon = pygame.image.load('graphics/settings.png')
+settings_icon = pygame.image.load('graphics/icons/settings.png')
 settings_rect = settings_icon.get_rect(midbottom=(50, 375))
+
+return_icon = pygame.image.load('graphics/icons/return.png')
+return_rect = return_icon.get_rect(midtop=(50, 25))
+
+in_settings = False
+language = 'English'
+
+turkish_icon = pygame.image.load('graphics/icons/turkish.png')
+turkish_rect = turkish_icon.get_rect(midleft=(100, 200))
+english_icon = pygame.image.load('graphics/icons/english.png')
+english_rect = english_icon.get_rect(midleft=(336, 200))
+polish_icon = pygame.image.load('graphics/icons/polish.png')
+polish_rect = polish_icon.get_rect(midleft=(564, 200))
 
 # Groups
 player = pygame.sprite.GroupSingle()
@@ -127,9 +175,16 @@ obstacle_group = pygame.sprite.Group()
 player_stand = pygame.image.load('graphics/player/player_stand.png').convert_alpha()
 player_stand = pygame.transform.rotozoom(player_stand, 0, 2)
 player_stand_rectangle = player_stand.get_rect(center=(400, 200))
+
 game_name = font.render('Pixel Runner', False, (111, 196, 169))
+if language == 'English':
+    game_message = font.render('Press Space to Run!', False, (111, 196, 169))
+elif language == 'Turkce':
+    game_message = font.render('Kosmak icin bosluk tusuna basin!', False, (111, 196, 169))
+else:
+    language = 'Polski'
+    game_message = font.render('Nacisnij spacje, aby uruchomic!', False, (111, 196, 169))
 game_name_rectangle = game_name.get_rect(center=(400, 80))
-game_message = font.render('Press Space to Run!', False, (111, 196, 169))
 game_message_rectangle = game_message.get_rect(center=(400, 330))
 
 # Timers
@@ -158,10 +213,15 @@ while True:
         background_group.update()
         background_group.draw(screen)
         current_time = pygame.time.get_ticks() - start_time
-        score_surface = font.render(f"Score :  {int(current_time / 1000)}", False, (64, 64, 64))
+        score = int(current_time / 1000)
+        if language == 'English':
+            score_surface = font.render(f"Score :  {int(current_time / 1000)}", False, (64, 64, 64))
+        elif language == 'Turkce':
+            score_surface = font.render(f"Skor :  {int(current_time / 1000)}", False, (64, 64, 64))
+        else:
+            score_surface = font.render(f"Wynik :  {int(current_time / 1000)}", False, (64, 64, 64))
         score_rectangle = score_surface.get_rect(center=(400, 50))
         screen.blit(score_surface, score_rectangle)
-        score = int(current_time / 1000)
         # Player Movement
         player.draw(screen)
         player.update()
@@ -173,21 +233,18 @@ while True:
         # Collision
         if pygame.sprite.spritecollide(player.sprite, obstacle_group, False):
             bg_music.stop()
+            death_sound.play()
             game_running = False
 
     else:
         screen.fill((94, 129, 162))
-        screen.blit(player_stand, player_stand_rectangle)
-        screen.blit(game_message, game_message_rectangle)
-        screen.blit(settings_icon, settings_rect)
 
-        if score == 0:
-            screen.blit(game_name, game_name_rectangle)
+        if in_settings:
+            settings_scene()
+        elif score == 0:
+            start_scene()
         else:
-            score_message = font.render(f'Your score : {score}', False, (111, 196, 169))
-            score_message_rectangle = score_message.get_rect(center=(400, 80))
-            screen.blit(score_message, score_message_rectangle)
-            player.sprite.rect.bottom = 300
+            restart_scene()
 
         for event in pygame.event.get():
 
@@ -195,11 +252,38 @@ while True:
                 pygame.quit()
                 exit()
 
-            if settings_rect.collidepoint(pygame.mouse.get_pos()):
+            if event.type == pygame.MOUSEBUTTONDOWN:
                 if pygame.mouse.get_pressed()[0]:
-                    print('TODO - CREATE SETTINGS PAGE AND THE LOGIC TO TRAVERSE PAGES')
+                    if settings_rect.collidepoint(pygame.mouse.get_pos()):
+                        in_settings = True
 
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if pygame.mouse.get_pressed()[0]:
+                    if return_rect.collidepoint(pygame.mouse.get_pos()):
+                        in_settings = False
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if pygame.mouse.get_pressed()[0]:
+                    if turkish_rect.collidepoint(pygame.mouse.get_pos()):
+                        game_message = font.render('Kosmak icin bosluk tusuna basin!', False, (111, 196, 169))
+                        game_message_rectangle = game_message.get_rect(center=(400, 330))
+                        language = 'Turkce'
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if pygame.mouse.get_pressed()[0]:
+                    if english_rect.collidepoint(pygame.mouse.get_pos()):
+                        game_message = font.render('Press Space to Run!', False, (111, 196, 169))
+                        game_message_rectangle = game_message.get_rect(center=(400, 330))
+                        language = 'English'
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if pygame.mouse.get_pressed()[0]:
+                    if polish_rect.collidepoint(pygame.mouse.get_pos()):
+                        game_message = font.render('Nacisnij spacje, aby uruchomic!', False, (111, 196, 169))
+                        game_message_rectangle = game_message.get_rect(center=(400, 330))
+                        language = 'Polski'
+
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and not in_settings:
                 obstacle_group.empty()
                 bg_music.play()
                 start_time = pygame.time.get_ticks()
