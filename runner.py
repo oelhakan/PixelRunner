@@ -111,6 +111,9 @@ font = pygame.font.Font('font/pixeltype.ttf', 50)
 bg_music = pygame.mixer.Sound('audio/music.wav')
 bg_music.set_volume(0.1)
 
+settings_icon = pygame.image.load('graphics/settings.png')
+settings_rect = settings_icon.get_rect(midbottom=(50, 375))
+
 # Groups
 player = pygame.sprite.GroupSingle()
 player.add(Player())
@@ -159,7 +162,6 @@ while True:
         score_rectangle = score_surface.get_rect(center=(400, 50))
         screen.blit(score_surface, score_rectangle)
         score = int(current_time / 1000)
-
         # Player Movement
         player.draw(screen)
         player.update()
@@ -177,6 +179,7 @@ while True:
         screen.fill((94, 129, 162))
         screen.blit(player_stand, player_stand_rectangle)
         screen.blit(game_message, game_message_rectangle)
+        screen.blit(settings_icon, settings_rect)
 
         if score == 0:
             screen.blit(game_name, game_name_rectangle)
@@ -191,6 +194,10 @@ while True:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
+
+            if settings_rect.collidepoint(pygame.mouse.get_pos()):
+                if pygame.mouse.get_pressed()[0]:
+                    print('TODO - CREATE SETTINGS PAGE AND THE LOGIC TO TRAVERSE PAGES')
 
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 obstacle_group.empty()
