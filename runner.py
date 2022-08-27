@@ -7,6 +7,25 @@ DISPLAY_HEIGHT = 400
 DISPLAY_TITLE = 'Pixel Runner'
 
 
+class Background(pygame.sprite.Sprite):
+    def __init__(self, number, *args):
+        self.image = pygame.image.load('graphics/background.png').convert()
+        self.rect = self.image.get_rect()
+        self._layer = -10
+        pygame.sprite.Sprite.__init__(self, *args)
+        self.moved = 0
+        self.number = number
+        self.rect.x = self.rect.width * self.number
+
+    def update(self):
+        self.rect.move_ip(-1, 0)
+        self.moved += 1
+
+        if self.moved >= self.rect.width:
+            self.rect.x = self.rect.width * self.number
+            self.moved = 0
+
+
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -78,6 +97,7 @@ class Obstacle(pygame.sprite.Sprite):
             self.kill()
 
 
+# Game variables
 pygame.init()
 screen = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
 pygame.display.set_caption(DISPLAY_TITLE)
@@ -88,17 +108,15 @@ game_running = False
 start_time = 0
 score = 0
 font = pygame.font.Font('font/pixeltype.ttf', 50)
-sky = pygame.image.load('graphics/sky.png').convert_alpha()
-ground = pygame.image.load('graphics/ground.png').convert_alpha()
-bg_music = pygame.mixer.Sound('audio/music2.mp3')
+bg_music = pygame.mixer.Sound('audio/music.wav')
 bg_music.set_volume(0.1)
-# bg_music.play(loops=-1)
-death_sound = pygame.mixer.Sound('audio/death.mp3')
-death_sound.set_volume(0.1)
 
 # Groups
 player = pygame.sprite.GroupSingle()
 player.add(Player())
+background_group = pygame.sprite.LayeredUpdates()
+Background(0, background_group)
+Background(1, background_group)
 
 obstacle_group = pygame.sprite.Group()
 
@@ -134,8 +152,8 @@ while True:
             if event.type == obstacle_timer:
                 obstacle_group.add(Obstacle(choice(['fly', 'snail', 'snail', 'snail'])))
 
-        screen.blit(sky, (0, 0))
-        screen.blit(ground, (0, 300))
+        background_group.update()
+        background_group.draw(screen)
         current_time = pygame.time.get_ticks() - start_time
         score_surface = font.render(f"Score :  {int(current_time / 1000)}", False, (64, 64, 64))
         score_rectangle = score_surface.get_rect(center=(400, 50))
@@ -153,7 +171,6 @@ while True:
         # Collision
         if pygame.sprite.spritecollide(player.sprite, obstacle_group, False):
             bg_music.stop()
-            death_sound.play()
             game_running = False
 
     else:
