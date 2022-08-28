@@ -5,6 +5,7 @@ from random import randint, choice
 DISPLAY_WIDTH = 800
 DISPLAY_HEIGHT = 400
 DISPLAY_TITLE = 'Pixel Runner'
+SPEED = 1
 
 
 class Background(pygame.sprite.Sprite):
@@ -18,8 +19,8 @@ class Background(pygame.sprite.Sprite):
         self.rect.x = self.rect.width * self.number
 
     def update(self):
-        self.rect.move_ip(-1, 0)
-        self.moved += 1
+        self.rect.move_ip(-SPEED, 0)
+        self.moved += SPEED
 
         if self.moved >= self.rect.width:
             self.rect.x = self.rect.width * self.number
@@ -89,7 +90,7 @@ class Obstacle(pygame.sprite.Sprite):
 
     def update(self):
         self.animation_state()
-        self.rect.x -= 6
+        self.rect.x -= (SPEED + 3)
         self.destroy()
 
     def destroy(self):
@@ -120,7 +121,7 @@ def start_scene():
 
 
 def settings_scene():
-    language_message = font.render(''+language, False, (111, 196, 169))
+    language_message = font.render('' + language, False, (111, 196, 169))
     language_rect = language_message.get_rect(center=(400, 300))
 
     screen.blit(language_message, language_rect)
@@ -197,6 +198,9 @@ pygame.time.set_timer(snail_animation_timer, 500)
 fly_animation_timer = pygame.USEREVENT + 3
 pygame.time.set_timer(fly_animation_timer, 200)
 
+difficulty_timer = pygame.USEREVENT + 4
+pygame.time.set_timer(difficulty_timer, 1000)
+
 while True:
 
     if game_running:
@@ -209,6 +213,9 @@ while True:
 
             if event.type == obstacle_timer:
                 obstacle_group.add(Obstacle(choice(['fly', 'snail', 'snail', 'snail'])))
+
+            if event.type == difficulty_timer:
+                SPEED += 0.1
 
         background_group.update()
         background_group.draw(screen)
@@ -284,6 +291,7 @@ while True:
                         language = 'Polski'
 
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and not in_settings:
+                SPEED = 1
                 obstacle_group.empty()
                 bg_music.play()
                 start_time = pygame.time.get_ticks()
