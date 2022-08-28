@@ -293,7 +293,7 @@ while True:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and not in_settings:
                 SPEED = 1
                 obstacle_group.empty()
-                bg_music.play()
+                bg_music.play(loops=-1)
                 start_time = pygame.time.get_ticks()
                 game_running = True
 
